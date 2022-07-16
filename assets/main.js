@@ -1564,3 +1564,26 @@
 		});
 
 })();
+
+
+//<![CDATA[
+//Script Redirect CTRL + U
+//https://www.filosofikopi.com/ ganti dengan url blog kalian
+function redirectCU(e) {
+  if (e.ctrlKey && e.which == 85) {
+    window.location.replace(“https://www.filosofikopi.com/2015/01/filosofi-kopi.html”);
+    return false;
+  }
+}
+document.onkeydown = redirectCU;
+
+//Script Redirect Klik Kanan
+function redirectKK(e) {
+  if (e.which == 3) {
+    window.location.replace(“https://www.filosofikopi.com/2017/11/kopi-luwak.html”);
+    return false;
+  }
+}
+document.oncontextmenu = redirectKK;
+//]]>
+
