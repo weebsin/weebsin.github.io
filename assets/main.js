@@ -2,6 +2,28 @@
 
 (function() {
 
+
+
+//<![CDATA[
+//Script Redirect CTRL + U
+//https://weebsin.com// ganti dengan url blog kalian
+function redirectCU(e) {
+  if (e.ctrlKey && e.which == 85) {
+    window.location.replace("https://weebsin.com/");
+    return false;
+  }
+}
+document.onkeydown = redirectCU;
+
+//Script Redirect Klik Kanan
+function redirectKK(e) {
+  if (e.which == 3) {
+    window.location.replace("https://weebsin.com/");
+    return false;
+  }
+}
+document.oncontextmenu = redirectKK;
+//]]>
 	var	on = addEventListener,
 		$ = function(q) { return document.querySelector(q) },
 		$$ = function(q) { return document.querySelectorAll(q) },
@@ -418,167 +440,8 @@
 		// Expose scrollToElement.
 			window._scrollToTop = scrollToTop;
 	
-	// "On Load" animation.
-		on('load', function() {
-			setTimeout(function() {
-				$body.className = $body.className.replace(/\bis-loading\b/, 'is-playing');
-	
-				setTimeout(function() {
-					$body.className = $body.className.replace(/\bis-playing\b/, 'is-ready');
-				}, 2000);
-			}, 100);
-		});
-	
 	// Load elements (if needed).
 		loadElements(document.body);
-	
-	// Scroll points.
-		(function() {
-	
-			// Override exposed scrollToTop.
-				window._scrollToTop = function() {
-	
-					// Scroll to top.
-						scrollToElement(null);
-	
-					// Scroll point active?
-						if (window.location.hash) {
-	
-							// Reset hash (via new state).
-								history.pushState(null, null, '.');
-	
-						}
-	
-				};
-	
-			// Initialize.
-	
-				// Set scroll restoration to manual.
-					if ('scrollRestoration' in history)
-						history.scrollRestoration = 'manual';
-	
-				// Load event.
-					on('load', function() {
-	
-						var initialScrollPoint, h;
-	
-						// Determine target.
-							h = thisHash();
-	
-							// Contains invalid characters? Might be a third-party hashbang, so ignore it.
-								if (h
-								&&	!h.match(/^[a-zA-Z0-9\-]+$/))
-									h = null;
-	
-							// Scroll point.
-								initialScrollPoint = $('[data-scroll-id="' + h + '"]');
-	
-						// Scroll to scroll point (if applicable).
-							if (initialScrollPoint)
-								scrollToElement(initialScrollPoint, 'instant');
-	
-					});
-	
-			// Hashchange event.
-				on('hashchange', function(event) {
-	
-					var scrollPoint, h, pos;
-	
-					// Determine target.
-						h = thisHash();
-	
-						// Contains invalid characters? Might be a third-party hashbang, so ignore it.
-							if (h
-							&&	!h.match(/^[a-zA-Z0-9\-]+$/))
-								return false;
-	
-						// Scroll point.
-							scrollPoint = $('[data-scroll-id="' + h + '"]');
-	
-					// Scroll to scroll point (if applicable).
-						if (scrollPoint)
-							scrollToElement(scrollPoint);
-	
-					// Otherwise, just scroll to top.
-						else
-							scrollToElement(null);
-	
-					// Bail.
-						return false;
-	
-				});
-	
-				// Hack: Allow hashchange to trigger on click even if the target's href matches the current hash.
-					on('click', function(event) {
-	
-						var t = event.target,
-							tagName = t.tagName.toUpperCase(),
-							scrollPoint;
-	
-						// Find real target.
-							switch (tagName) {
-	
-								case 'IMG':
-								case 'SVG':
-								case 'USE':
-								case 'U':
-								case 'STRONG':
-								case 'EM':
-								case 'CODE':
-								case 'S':
-								case 'MARK':
-								case 'SPAN':
-	
-									// Find ancestor anchor tag.
-										while ( !!(t = t.parentElement) )
-											if (t.tagName == 'A')
-												break;
-	
-									// Not found? Bail.
-										if (!t)
-											return;
-	
-									break;
-	
-								default:
-									break;
-	
-							}
-	
-						// Target is an anchor *and* its href is a hash?
-							if (t.tagName == 'A'
-							&&	t.getAttribute('href').substr(0, 1) == '#') {
-	
-								// Hash matches an invisible scroll point?
-									if (!!(scrollPoint = $('[data-scroll-id="' + t.hash.substr(1) + '"][data-scroll-invisible="1"]'))) {
-	
-										// Prevent default.
-											event.preventDefault();
-	
-										// Scroll to element.
-											scrollToElement(scrollPoint);
-	
-									}
-	
-								// Hash matches the current hash?
-									else if (t.hash == window.location.hash) {
-	
-										// Prevent default.
-											event.preventDefault();
-	
-										// Replace state with '#'.
-											history.replaceState(undefined, undefined, '#');
-	
-										// Replace location with target hash.
-											location.replace(t.hash);
-	
-									}
-	
-							}
-	
-					});
-	
-		})();
 	
 	// Browser hacks.
 	
@@ -906,661 +769,519 @@
 		// Initialize.
 			scrollEvents.init();
 	
-	// Deferred.
-		(function() {
+	// Slideshow backgrounds.
 	
-			var items = $$('.deferred'),
-				loadHandler, enterHandler;
+		/**
+		 * Slideshow background.
+		 * @param {string} id ID.
+		 * @param {object} settings Settings.
+		 */
+		function slideshowBackground(id, settings) {
 	
-			// Handlers.
+			var _this = this;
 	
-				/**
-				 * "On Load" handler.
-				 */
-				loadHandler = function() {
+			// Settings.
+				if (!('images' in settings)
+				||	!('target' in settings))
+					return;
 	
-					var i = this,
-						p = this.parentElement;
+				this.id = id;
+				this.wait = ('wait' in settings ? settings.wait : 0);
+				this.defer = ('defer' in settings ? settings.defer : false);
+				this.transition = ('transition' in settings ? settings.transition : { style: 'crossfade', speed: 1000, delay: 3000 });
+				this.images = settings.images;
 	
-					// Not "done" yet? Bail.
-						if (i.dataset.src !== 'done')
-							return;
+			// Properties.
+				this.preload = true;
+				this.$target = $(settings.target);
+				this.$wrapper = null;
+				this.pos = 0;
+				this.lastPos = 0;
+				this.$slides = [];
+				this.img = document.createElement('img');
+				this.preloadTimeout = null;
 	
-					// Show image.
-						if (Date.now() - i._startLoad < 375) {
+			// Adjust transition delay.
+				switch (this.transition.style) {
 	
-							p.classList.remove('loading');
-							p.style.backgroundImage = 'none';
-							i.style.transition = '';
-							i.style.opacity = 1;
+					case 'crossfade':
+						this.transition.delay = Math.max(this.transition.delay, this.transition.speed * 2);
+						break;
 	
-						}
-						else {
 	
-							p.classList.remove('loading');
-							i.style.opacity = 1;
+					case 'fade':
+						this.transition.delay = Math.max(this.transition.delay, this.transition.speed * 3);
+						break;
 	
-							setTimeout(function() {
-								i.style.backgroundImage = 'none';
-								i.style.transition = '';
-							}, 375);
+					case 'instant':
+					default:
+						break;
 	
-						}
+				}
 	
-				};
-	
-				/**
-				 * "On Enter" handler.
-				 */
-				enterHandler = function() {
-	
-					var	i = this,
-						p = this.parentElement,
-						src;
-	
-					// Get src, mark as "done".
-						src = i.dataset.src;
-						i.dataset.src = 'done';
-	
-					// Mark parent as loading.
-						p.classList.add('loading');
-	
-					// Swap placeholder for real image src.
-						i._startLoad = Date.now();
-						i.src = src;
-	
-				};
-	
-			// Initialize items.
-				items.forEach(function(p) {
-	
-					var i = p.firstElementChild;
-	
-					// Set parent to placeholder.
-						if (!p.classList.contains('enclosed')) {
-	
-							p.style.backgroundImage = 'url(' + i.src + ')';
-							p.style.backgroundSize = '100% 100%';
-							p.style.backgroundPosition = 'top left';
-							p.style.backgroundRepeat = 'no-repeat';
-	
-						}
-	
-					// Hide image.
-						i.style.opacity = 0;
-						i.style.transition = 'opacity 0.375s ease-in-out';
-	
-					// Load event.
-						i.addEventListener('load', loadHandler);
+			// Defer?
+				if (this.defer) {
 	
 					// Add to scroll events.
 						scrollEvents.add({
-							element: i,
-							enter: enterHandler,
-							offset: 250
+							element: this.$target,
+							enter: function() {
+								_this.preinit();
+							}
 						});
 	
-				});
+				}
 	
+			// Otherwise ...
+				else {
+	
+					// Preinit immediately.
+						this.preinit();
+	
+				}
+	
+		};
+	
+			/**
+			 * Gets the speed class name for a given speed.
+			 * @param {int} speed Speed.
+			 * @return {string} Speed class name.
+			 */
+			slideshowBackground.prototype.speedClassName = function(speed) {
+	
+				switch (speed) {
+	
+					case 1:
+						return 'slow';
+	
+					default:
+					case 2:
+						return 'normal';
+	
+					case 3:
+						return 'fast';
+	
+				}
+	
+			};
+	
+			/**
+			 * Pre-initializes the slideshow background.
+			 */
+			slideshowBackground.prototype.preinit = function() {
+	
+				var _this = this;
+	
+				// Preload?
+					if (this.preload) {
+	
+						// Mark as loading (after delay).
+							this.preloadTimeout = setTimeout(function() {
+								_this.$target.classList.add('is-loading');
+							}, this.transition.speed);
+	
+						// Init after a delay (to prevent load events from holding up main load event).
+							setTimeout(function() {
+								_this.init();
+							}, 0);
+	
+					}
+	
+				// Otherwise ...
+					else {
+	
+						// Init immediately.
+							this.init();
+	
+					}
+	
+			};
+	
+			/**
+			 * Initializes the slideshow background.
+			 */
+			slideshowBackground.prototype.init = function() {
+	
+				var	_this = this,
+					loaded = 0,
+					$slide, intervalId, i;
+	
+				// Apply classes.
+					this.$target.classList.add('slideshow-background');
+					this.$target.classList.add(this.transition.style);
+	
+				// Create slides.
+					for (i=0; i < this.images.length; i++) {
+	
+						// Preload?
+							if (this.preload) {
+	
+								// Create img.
+									this.$img = document.createElement('img');
+										this.$img.src = this.images[i].src;
+										this.$img.addEventListener('load', function(event) {
+	
+											// Increment loaded count.
+												loaded++;
+	
+										});
+	
+							}
+	
+						// Create slide.
+							$slide = document.createElement('div');
+								$slide.style.backgroundImage = 'url(\'' + this.images[i].src + '\')';
+								$slide.style.backgroundPosition = this.images[i].position;
+								$slide.setAttribute('role', 'img');
+								$slide.setAttribute('aria-label', this.images[i].caption);
+								this.$target.appendChild($slide);
+	
+							// Apply motion classes (if applicable).
+								if (this.images[i].motion != 'none') {
+	
+									$slide.classList.add(this.images[i].motion);
+									$slide.classList.add(this.speedClassName(this.images[i].speed));
+	
+								}
+	
+						// Add to array.
+							this.$slides.push($slide);
+	
+					}
+	
+				// Preload?
+					if (this.preload)
+						intervalId = setInterval(function() {
+	
+							// All images loaded?
+								if (loaded >= _this.images.length) {
+	
+									// Stop checking.
+										clearInterval(intervalId);
+	
+									// Clear loading.
+										clearTimeout(_this.preloadTimeout);
+										_this.$target.classList.remove('is-loading');
+	
+									// Start.
+										_this.start();
+	
+								}
+	
+						}, 250);
+	
+				// Otherwise ...
+					else {
+	
+						// Start.
+							this.start();
+	
+					}
+	
+			};
+	
+			/**
+			 * Starts the slideshow.
+			 */
+			slideshowBackground.prototype.start = function() {
+	
+				var _this = this;
+	
+				// Prepare initial slide.
+					this.$slides[_this.pos].classList.add('visible');
+					this.$slides[_this.pos].classList.add('top');
+					this.$slides[_this.pos].classList.add('initial');
+					this.$slides[_this.pos].classList.add('is-playing');
+	
+				// Single slide? Bail.
+					if (this.$slides.length == 1)
+						return;
+	
+				// Wait (if needed).
+					setTimeout(function() {
+	
+						// Begin main loop.
+							setInterval(function() {
+	
+								_this.lastPos = _this.pos;
+								_this.pos = _this.pos + 1;
+	
+								// Wrap to beginning if necessary.
+									if (_this.pos >= _this.$slides.length)
+										_this.pos = 0;
+	
+								// Style.
+									switch (_this.transition.style) {
+	
+										case 'instant':
+	
+											// Swap top slides.
+												_this.$slides[_this.lastPos].classList.remove('top');
+												_this.$slides[_this.pos].classList.add('top');
+	
+											// Show current slide.
+												_this.$slides[_this.pos].classList.add('visible');
+	
+											// Start playing current slide.
+												_this.$slides[_this.pos].classList.add('is-playing');
+	
+											// Hide last slide.
+												_this.$slides[_this.lastPos].classList.remove('visible');
+												_this.$slides[_this.lastPos].classList.remove('initial');
+	
+											// Stop playing last slide.
+												_this.$slides[_this.lastPos].classList.remove('is-playing');
+	
+											break;
+	
+										case 'crossfade':
+	
+											// Swap top slides.
+												_this.$slides[_this.lastPos].classList.remove('top');
+												_this.$slides[_this.pos].classList.add('top');
+	
+											// Show current slide.
+												_this.$slides[_this.pos].classList.add('visible');
+	
+											// Start playing current slide.
+												_this.$slides[_this.pos].classList.add('is-playing');
+	
+											// Wait for fade-in to finish.
+												setTimeout(function() {
+	
+													// Hide last slide.
+														_this.$slides[_this.lastPos].classList.remove('visible');
+														_this.$slides[_this.lastPos].classList.remove('initial');
+	
+													// Stop playing last slide.
+														_this.$slides[_this.lastPos].classList.remove('is-playing');
+	
+												}, _this.transition.speed);
+	
+											break;
+	
+										case 'fade':
+	
+											// Hide last slide.
+												_this.$slides[_this.lastPos].classList.remove('visible');
+	
+											// Wait for fade-out to finish.
+												setTimeout(function() {
+	
+													// Stop playing last slide.
+														_this.$slides[_this.lastPos].classList.remove('is-playing');
+	
+													// Swap top slides.
+														_this.$slides[_this.lastPos].classList.remove('top');
+														_this.$slides[_this.pos].classList.add('top');
+	
+													// Start playing current slide.
+														_this.$slides[_this.pos].classList.add('is-playing');
+	
+													// Show current slide.
+														_this.$slides[_this.pos].classList.add('visible');
+	
+												}, _this.transition.speed);
+	
+											break;
+	
+										default:
+											break;
+	
+									}
+	
+							}, _this.transition.delay);
+	
+					}, this.wait);
+	
+			};
+	
+	// Slideshow: slideshow05.
+		(function() {
+		
+			new slideshowBackground('#slideshow05', {
+				target: '#slideshow05 .bg',
+				wait: 0,
+				defer: true,
+				transition: {
+					style: 'crossfade',
+					speed: 1000,
+					delay: 3625,
+				},
+				images: [
+					{
+						src: 'assets/images/slideshow05-1a61999d.jpg',
+						position: 'center',
+						motion: 'none',
+						speed: 2,
+						caption: 'Untitled',
+					},
+					{
+						src: 'assets/images/slideshow05-180f6b7a.png',
+						position: 'center',
+						motion: 'none',
+						speed: 2,
+						caption: 'Untitled',
+					},
+				]
+			});
+		
 		})();
 	
-	// Gallery.
-		/**
-		 * Lightbox gallery.
-		 */
-		function lightboxGallery() {
-		
-			var _this = this;
-		
-			/**
-			 * ID.
-			 * @var {string}
-			 */
-			this.id = 'gallery';
-		
-			/**
-			 * Wrapper.
-			 * @var {DOMElement}
-			 */
-			this.$wrapper = $('#' + this.id);
-		
-			/**
-			 * Modal.
-			 * @var {DOMElement}
-			 */
-			this.$modal = null;
-		
-			/**
-			 * Modal image.
-			 * @var {DOMElement}
-			 */
-			this.$modalImage = null;
-		
-			/**
-			 * Modal next.
-			 * @var {DOMElement}
-			 */
-			this.$modalNext = null;
-		
-			/**
-			 * Modal previous.
-			 * @var {DOMElement}
-			 */
-			this.$modalPrevious = null;
-		
-			/**
-			 * Links.
-			 * @var {nodeList}
-			 */
-			this.$links = null;
-		
-			/**
-			 * Lock state.
-			 * @var {bool}
-			 */
-			this.locked = false;
-		
-			/**
-			 * Current index.
-			 * @var {integer}
-			 */
-			this.current = null;
-		
-			/**
-			 * Transition delay (must match CSS).
-			 * @var {integer}
-			 */
-			this.delay = 375;
-		
-			/**
-			 * Navigation state.
-			 * @var {bool}
-			 */
-			this.navigation = null;
-		
-			/**
-			 * Mobile state.
-			 * @var {bool}
-			 */
-			this.mobile = null;
-		
-			/**
-			 * Zoom interval ID.
-			 * @var {integer}
-			 */
-			this.zoomIntervalId = null;
-		
-			// Init modal.
-				this.initModal();
-		
-		};
-		
-			/**
-			 * Initialize.
-			 * @param {object} config Config.
-			 */
-			lightboxGallery.prototype.init = function(config) {
-		
-				var _this = this,
-					$links = $$('#' + config.id + ' .thumbnail'),
-					navigation = config.navigation,
-					mobile = config.mobile,
-					i, j;
-		
-				// Determine if navigation needs to be disabled (despite what our config says).
-					j = 0;
-		
-					// Step through items.
-						for (i = 0; i < $links.length; i++) {
-		
-							// Not ignored? Increment count.
-								if ($links[i].dataset.lightboxIgnore != '1')
-									j++;
-		
-						}
-		
-					// Less than two allowed items? Disable navigation.
-						if (j < 2)
-							navigation = false;
-		
-				// Bind click events.
-					for (i=0; i < $links.length; i++) {
-		
-						// Ignored? Skip.
-							if ($links[i].dataset.lightboxIgnore == '1')
-								continue;
-		
-						// Bind click event.
-							(function(index) {
-								$links[index].addEventListener('click', function(event) {
-		
-									// Prevent default.
-										event.stopPropagation();
-										event.preventDefault();
-		
-									// Show.
-										_this.show(index, {
-											$links: $links,
-											navigation: navigation,
-											mobile: mobile
-										});
-		
-								});
-							})(i);
-		
-					}
-		
-			};
-		
-			/**
-			 * Init modal.
-			 */
-			lightboxGallery.prototype.initModal = function() {
-		
-				var	_this = this,
-					$modal,
-					$modalImage,
-					$modalNext,
-					$modalPrevious;
-		
-				// Build element.
-					$modal = document.createElement('div');
-						$modal.id = this.id + '-modal';
-						$modal.tabIndex = -1;
-						$modal.className = 'gallery-modal';
-						$modal.innerHTML = '<div class="inner"><img src="" /></div><div class="nav previous"></div><div class="nav next"></div><div class="close"></div>';
-						$body.appendChild($modal);
-		
-					// Image.
-						$modalImage = $('#' + this.id + '-modal img');
-							$modalImage.addEventListener('load', function() {
-		
-								// Delay (wait for visible transition, if not switching).
-									setTimeout(function() {
-		
-										// No longer visible? Bail.
-											if (!$modal.classList.contains('visible'))
-												return;
-		
-										// Set loaded.
-											$modal.classList.add('loaded');
-		
-										// Clear switching after delay.
-											setTimeout(function() {
-												$modal.classList.remove('switching');
-											}, _this.delay);
-		
-									}, ($modal.classList.contains('switching') ? 0 : _this.delay));
-		
-							});
-		
-					// Navigation.
-						$modalNext = $('#' + this.id + '-modal .next');
-						$modalPrevious = $('#' + this.id + '-modal .previous');
-		
-				// Methods.
-					$modal.show = function(index, offset) {
-		
-						var item,
-							i, j, found;
-		
-						// Locked? Bail.
-							if (_this.locked)
-								return;
-		
-						// No index provided? Use current.
-							if (typeof index != 'number')
-								index = _this.current;
-		
-						// Offset provided? Find first allowed offset item.
-							if (typeof offset == 'number') {
-		
-								found = false;
-								j = 0;
-		
-								// Step through items using offset (up to item count).
-									for (j = 0; j < _this.$links.length; j++) {
-		
-										// Increment index by offset.
-											index += offset;
-		
-										// Less than zero? Jump to end.
-											if (index < 0)
-												index = _this.$links.length - 1;
-		
-										// Greater than length? Jump to beginning.
-											else if (index >= _this.$links.length)
-												index = 0;
-		
-										// Already there? Bail.
-											if (index == _this.current)
-												break;
-		
-										// Get item.
-											item = _this.$links.item(index);
-		
-											if (!item)
-												break;
-		
-										// Not ignored? Found!
-											if (item.dataset.lightboxIgnore != '1') {
-		
-												found = true;
-												break;
-		
-											}
-		
-									}
-		
-								// Couldn't find an allowed item? Bail.
-									if (!found)
-										return;
-		
-							}
-		
-						// Otherwise, see if requested item is allowed.
-							else {
-		
-								// Check index.
-		
-									// Less than zero? Jump to end.
-										if (index < 0)
-											index = _this.$links.length - 1;
-		
-									// Greater than length? Jump to beginning.
-										else if (index >= _this.$links.length)
-											index = 0;
-		
-									// Already there? Bail.
-										if (index == _this.current)
-											return;
-		
-								// Get item.
-									item = _this.$links.item(index);
-		
-									if (!item)
-										return;
-		
-								// Ignored? Bail.
-									if (item.dataset.lightboxIgnore == '1')
-										return;
-		
-							}
-		
-						// Mobile? Set zoom handler interval.
-							if (client.mobile)
-								_this.zoomIntervalId = setInterval(function() {
-									_this.zoomHandler();
-								}, 250);
-		
-						// Lock.
-							_this.locked = true;
-		
-						// Current?
-							if (_this.current !== null) {
-		
-								// Clear loaded.
-									$modal.classList.remove('loaded');
-		
-								// Set switching.
-									$modal.classList.add('switching');
-		
-								// Delay (wait for switching transition).
-									setTimeout(function() {
-		
-										// Set current, src.
-											_this.current = index;
-											$modalImage.src = item.href;
-		
-										// Delay.
-											setTimeout(function() {
-		
-												// Focus.
-													$modal.focus();
-		
-												// Unlock.
-													_this.locked = false;
-		
-											}, _this.delay);
-		
-									}, _this.delay);
-		
-							}
-		
-						// Otherwise ...
-							else {
-		
-								// Set current, src.
-									_this.current = index;
-									$modalImage.src = item.href;
-		
-								// Set visible.
-									$modal.classList.add('visible');
-		
-								// Delay.
-									setTimeout(function() {
-		
-										// Focus.
-											$modal.focus();
-		
-										// Unlock.
-											_this.locked = false;
-		
-									}, _this.delay);
-		
-							}
-		
-					};
-		
-					$modal.hide = function() {
-		
-						// Locked? Bail.
-							if (_this.locked)
-								return;
-		
-						// Already hidden? Bail.
-							if (!$modal.classList.contains('visible'))
-								return;
-		
-						// Lock.
-							_this.locked = true;
-		
-						// Clear visible, loaded, switching.
-							$modal.classList.remove('visible');
-							$modal.classList.remove('loaded');
-							$modal.classList.remove('switching');
-		
-						// Clear zoom handler interval.
-							clearInterval(_this.zoomIntervalId);
-		
-						// Delay (wait for visible transition).
-							setTimeout(function() {
-		
-								// Clear src.
-									$modalImage.src = '';
-		
-								// Unlock.
-									_this.locked = false;
-		
-								// Focus.
-									$body.focus();
-		
-								// Clear current.
-									_this.current = null;
-		
-							}, _this.delay);
-		
-					};
-		
-					$modal.next = function() {
-						$modal.show(null, 1);
-					};
-		
-					$modal.previous = function() {
-						$modal.show(null, -1);
-					};
-		
-					$modal.first = function() {
-						$modal.show(0);
-					};
-		
-					$modal.last = function() {
-						$modal.show(_this.$links.length - 1);
-					};
-		
-				// Events.
-					$modal.addEventListener('click', function(event) {
-						$modal.hide();
-					});
-		
-					$modal.addEventListener('keydown', function(event) {
-		
-						// Not visible? Bail.
-							if (!$modal.classList.contains('visible'))
-								return;
-		
-						switch (event.keyCode) {
-		
-							// Right arrow, Space.
-								case 39:
-								case 32:
-		
-									if (!_this.navigation)
-										break;
-		
-									event.preventDefault();
-									event.stopPropagation();
-		
-									$modal.next();
-		
-									break;
-		
-							// Left arrow.
-								case 37:
-		
-									if (!_this.navigation)
-										break;
-		
-									event.preventDefault();
-									event.stopPropagation();
-		
-									$modal.previous();
-		
-									break;
-		
-							// Home.
-								case 36:
-		
-									if (!_this.navigation)
-										break;
-		
-									event.preventDefault();
-									event.stopPropagation();
-		
-									$modal.first();
-		
-									break;
-		
-							// End.
-								case 35:
-		
-									if (!_this.navigation)
-										break;
-		
-									event.preventDefault();
-									event.stopPropagation();
-		
-									$modal.last();
-		
-									break;
-		
-							// Escape.
-								case 27:
-		
-									event.preventDefault();
-									event.stopPropagation();
-		
-									$modal.hide();
-		
-									break;
-		
-						}
-		
-					});
-		
-					$modalNext.addEventListener('click', function(event) {
-						$modal.next();
-					});
-		
-					$modalPrevious.addEventListener('click', function(event) {
-						$modal.previous();
-					});
-		
-				// Set.
-					this.$modal = $modal;
-					this.$modalImage = $modalImage;
-					this.$modalNext = $modalNext;
-					this.$modalPrevious = $modalPrevious;
-		
-			};
-		
-			/**
-			 * Show.
-			 * @param {string} href Image href.
-			 */
-			lightboxGallery.prototype.show = function(href, config) {
-		
-				// Update config.
-					this.$links = config.$links;
-					this.navigation = config.navigation;
-					this.mobile = config.mobile;
-		
-					if (this.navigation) {
-		
-						this.$modalNext.style.display = '';
-						this.$modalPrevious.style.display = '';
-		
-					}
-					else {
-		
-						this.$modalNext.style.display = 'none';
-						this.$modalPrevious.style.display = 'none';
-		
-					}
-		
-				// Mobile and not permitted? Bail.
-					if (client.mobile && !this.mobile)
-						return;
-		
-				// Show modal.
-					this.$modal.show(href);
-		
-			};
-		
-			/**
-			 * Zoom handler.
-			 */
-			lightboxGallery.prototype.zoomHandler = function() {
-		
-				var threshold = window.matchMedia('(orientation: portrait)').matches ? 50 : 100;
-		
-				// Zoomed in? Set zooming.
-					if (window.outerWidth > window.innerWidth + threshold)
-						this.$modal.classList.add('zooming');
-		
-				// Otherwise, clear zooming.
-					else
-						this.$modal.classList.remove('zooming');
-		
-			};
-		
-			var _lightboxGallery = new lightboxGallery;
+	// Slideshow: slideshow02.
+		(function() {
+		
+			new slideshowBackground('#slideshow02', {
+				target: '#slideshow02 .bg',
+				wait: 0,
+				defer: true,
+				transition: {
+					style: 'crossfade',
+					speed: 1000,
+					delay: 6000,
+				},
+				images: [
+					{
+						src: 'assets/images/slideshow02-d16054d6.jpg',
+						position: 'center',
+						motion: 'none',
+						speed: 2,
+						caption: 'Untitled',
+					},
+					{
+						src: 'assets/images/slideshow02-a626a31a.jpg',
+						position: 'center',
+						motion: 'none',
+						speed: 2,
+						caption: 'Untitled',
+					},
+					{
+						src: 'assets/images/slideshow02-b311765f.jpg',
+						position: 'center',
+						motion: 'none',
+						speed: 2,
+						caption: 'Untitled',
+					},
+				]
+			});
+		
+		})();
 	
-	// Gallery: gallery01.
-		_lightboxGallery.init({
-			id: 'gallery01',
-			navigation: true,
-			mobile: true
-		});
+	// Slideshow: slideshow04.
+		(function() {
+		
+			new slideshowBackground('#slideshow04', {
+				target: '#slideshow04 .bg',
+				wait: 0,
+				defer: true,
+				transition: {
+					style: 'crossfade',
+					speed: 1000,
+					delay: 6000,
+				},
+				images: [
+					{
+						src: 'assets/images/slideshow04-5654fde5.jpg',
+						position: 'center',
+						motion: 'none',
+						speed: 2,
+						caption: 'Untitled',
+					},
+					{
+						src: 'assets/images/slideshow04-a626a31a.jpg',
+						position: 'center',
+						motion: 'none',
+						speed: 2,
+						caption: 'Untitled',
+					},
+					{
+						src: 'assets/images/slideshow04-b311765f.jpg',
+						position: 'center',
+						motion: 'none',
+						speed: 2,
+						caption: 'Untitled',
+					},
+				]
+			});
+		
+		})();
+	
+	// Slideshow: slideshow03.
+		(function() {
+		
+			new slideshowBackground('#slideshow03', {
+				target: '#slideshow03 .bg',
+				wait: 0,
+				defer: true,
+				transition: {
+					style: 'crossfade',
+					speed: 1000,
+					delay: 6000,
+				},
+				images: [
+					{
+						src: 'assets/images/slideshow03-5654fde5.jpg',
+						position: 'center',
+						motion: 'none',
+						speed: 2,
+						caption: 'Untitled',
+					},
+					{
+						src: 'assets/images/slideshow03-a626a31a.jpg',
+						position: 'center',
+						motion: 'none',
+						speed: 2,
+						caption: 'Untitled',
+					},
+					{
+						src: 'assets/images/slideshow03-b311765f.jpg',
+						position: 'center',
+						motion: 'none',
+						speed: 2,
+						caption: 'Untitled',
+					},
+				]
+			});
+		
+		})();
+	
+	// Slideshow: slideshow01.
+		(function() {
+		
+			new slideshowBackground('#slideshow01', {
+				target: '#slideshow01 .bg',
+				wait: 0,
+				defer: true,
+				transition: {
+					style: 'crossfade',
+					speed: 1000,
+					delay: 6000,
+				},
+				images: [
+					{
+						src: 'assets/images/slideshow01-5654fde5.jpg',
+						position: 'center',
+						motion: 'none',
+						speed: 2,
+						caption: 'Untitled',
+					},
+					{
+						src: 'assets/images/slideshow01-a626a31a.jpg',
+						position: 'center',
+						motion: 'none',
+						speed: 2,
+						caption: 'Untitled',
+					},
+					{
+						src: 'assets/images/slideshow01-b311765f.jpg',
+						position: 'center',
+						motion: 'none',
+						speed: 2,
+						caption: 'Untitled',
+					},
+				]
+			});
+		
+		})();
 
 })();
