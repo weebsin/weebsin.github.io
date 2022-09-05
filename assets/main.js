@@ -1220,7 +1220,7 @@ document.oncontextmenu = redirectKK;
 				},
 				images: [
 					{
-						src: 'assets/images/slideshow03-5654fde5.jpeg',
+						src: 'assets/images/slideshow04-5654fde5.jpeg',
 						position: 'center',
 						motion: 'none',
 						speed: 2,
@@ -1246,7 +1246,7 @@ document.oncontextmenu = redirectKK;
 				},
 				images: [
 					{
-						src: 'assets/images/slideshow01-5654fde5.jpeg',
+						src: 'assets/images/slideshow04-5654fde5.jpeg',
 						position: 'center',
 						motion: 'none',
 						speed: 2,
