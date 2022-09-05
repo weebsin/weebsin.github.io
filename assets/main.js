@@ -1226,20 +1226,7 @@ document.oncontextmenu = redirectKK;
 						speed: 2,
 						caption: 'Untitled',
 					},
-					{
-						src: 'assets/images/slideshow03-a626a31a.jpg',
-						position: 'center',
-						motion: 'none',
-						speed: 2,
-						caption: 'Untitled',
-					},
-					{
-						src: 'assets/images/slideshow03-b311765f.jpg',
-						position: 'center',
-						motion: 'none',
-						speed: 2,
-						caption: 'Untitled',
-					},
+
 				]
 			});
 		
@@ -1259,21 +1246,7 @@ document.oncontextmenu = redirectKK;
 				},
 				images: [
 					{
-						src: 'assets/images/slideshow01-5654fde5.jpg',
-						position: 'center',
-						motion: 'none',
-						speed: 2,
-						caption: 'Untitled',
-					},
-					{
-						src: 'assets/images/slideshow01-a626a31a.jpg',
-						position: 'center',
-						motion: 'none',
-						speed: 2,
-						caption: 'Untitled',
-					},
-					{
-						src: 'assets/images/slideshow01-b311765f.jpg',
+						src: 'assets/images/slideshow01-5654fde5.jpeg',
 						position: 'center',
 						motion: 'none',
 						speed: 2,
