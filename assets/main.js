@@ -1220,7 +1220,7 @@ document.oncontextmenu = redirectKK;
 				},
 				images: [
 					{
-						src: 'assets/images/slideshow03-5654fde5.jpg',
+						src: 'assets/images/slideshow03-5654fde5.jpeg',
 						position: 'center',
 						motion: 'none',
 						speed: 2,
