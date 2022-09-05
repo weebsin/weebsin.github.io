@@ -1142,7 +1142,7 @@ document.oncontextmenu = redirectKK;
 				},
 				images: [
 					{
-						src: 'assets/images/slideshow02-d16054d6.jpg',
+						src: 'assets/images/slideshow02-d16054d6.jpeg',
 						position: 'center',
 						motion: 'none',
 						speed: 2,
